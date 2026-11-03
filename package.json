@@ -4,7 +4,15 @@
   "private": true,
   "type": "module",
   "description": "DeepSeek web search and page fetching using Pi's configured DeepSeek credentials.",
-  "scripts": { "test": "node --test test/*.test.mjs" },
-  "engines": { "node": ">=22.18.0" },
-  "pi": { "extensions": ["./index.ts"] }
+  "scripts": {
+    "test": "node --test test/*.test.mjs"
+  },
+  "engines": {
+    "node": ">=22.18.0"
+  },
+  "pi": {
+    "extensions": [
+      "./index.ts"
+    ]
+  }
 }

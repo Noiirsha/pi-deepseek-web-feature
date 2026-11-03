@@ -7,13 +7,13 @@
 要求 Pi 1.4.0 或更新版本，以及支持 TypeScript 类型擦除的 Node.js（22.18+，推荐 24）。
 
 ```sh
-pi install /Users/noiirsha/workspace/pi_agent_plugins/pi_deepseek_web_feature
+pi install /absolute/path/to/pi-deepseek-web-feature
 ```
 
 在已有 Pi 会话运行 `/reload`。也可以临时加载：
 
 ```sh
-pi -e /absolute/path/to/pi_deepseek_web_feature/index.ts
+pi -e /absolute/path/to/pi-deepseek-web-feature/index.ts
 ```
 
 如果启动参数或 `defaultTools` 使用工具白名单，需要加入 `deepseek_web_search` 和 `deepseek_web_fetch`。插件不会自行修改活跃工具集。
@@ -52,7 +52,7 @@ HTTP 401 也会提示重新配置 provider。插件仅向 `https://api.deepseek.
 - 使用 Node 内置 fetch。代理支持遵循 Node 版本和启动配置，不自行读取代理配置；Node 24 可在启动 Pi 前设置 `NODE_USE_ENV_PROXY=1` 并配置 `HTTPS_PROXY`。目标网页由 DeepSeek 服务端抓取。
 - 返回的网页是外部资料，不应执行其中的指令。搜索结果保留来源 URL，模型可以据此引用。
 - 两个工具都属于只读联网能力，可在现有 RO/RW 插件下使用。不会修改其模式或工具选择。
-- light subagent 当前启动时禁用扩展，因此不会自动获得这两个工具。
+- 可选的 `pi-light-subagent` 在子进程中禁用全部扩展，因此子代理不会自动获得这两个工具；主会话仍可使用。
 
 ## 费用与接口文档
 
@@ -67,13 +67,28 @@ npm test
 测试使用模拟网络，不需要 Key、不计费。设置 `PI_NODE_MODULES` 指向 Pi 安装的 node_modules 时，还会验证真实扩展加载器与工具注册。
 
 ```sh
-PI_NODE_MODULES=/Users/noiirsha/.pi/agent/install/releases/1.4.0/node_modules npm test
+PI_NODE_MODULES=/path/to/pi/runtime/node_modules npm test
 ```
 
 `scripts/live-test.mjs` 通过 Pi 的真实 ModelRegistry 和扩展加载器调用搜索工具，不调用聊天模型、不保存会话。会产生一次有效搜索请求的费用：
 
 ```sh
-PI_NODE_MODULES=/Users/noiirsha/.pi/agent/install/releases/1.4.0/node_modules node scripts/live-test.mjs
+PI_NODE_MODULES=/path/to/pi/runtime/node_modules node scripts/live-test.mjs
 ```
 
 提交格式沿用 `type: describe`，例如 `feat: add DeepSeek web search and fetch tools`。
+
+## 独立性与插件协作
+
+本仓库不导入或嵌套其他插件，只依赖宿主 Pi 提供的扩展 SDK 和内置 Node API；无需执行 npm install。唯一必需的外部配置是 Pi 官方 `deepseek` provider 的凭据。`pi-ro-rw-mode`、`pi-light-subagent`、`pi-better-realtime-thinking` 和 `PiProviderManager` 都不是安装依赖。RO/RW 是提示引导和工具选择，并不为本插件增加硬性权限检查。
+
+卸载：`pi remove /absolute/path/to/pi-deepseek-web-feature`，再 `/reload`。本包保留 `private: true`，尚未发布到 npm；上传 GitHub 请保留完整仓库（包含 `src/`、`scripts/` 和测试），不要只上传入口文件。`scripts/live-test.mjs` 不是普通测试的一部分，只有手动运行才会使用真实凭据并产生请求费用。
+
+## 仓库结构
+
+- `index.ts`：注册搜索／抓取工具并从 Pi 获取官方 DeepSeek 凭据。
+- `src/client.ts`：HTTP 请求、取消、响应限制和结果格式化。
+- `test/`：模拟网络与可选的真实 Pi 加载器检查。
+- `scripts/live-test.mjs`：显式运行的计费搜索验证。
+
+目录和包名使用中划线；`deepseek_web_search`／`deepseek_web_fetch` 是稳定工具标识，保留原拼写。
